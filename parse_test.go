@@ -16,11 +16,11 @@ func TestNewDateParseTag(t *testing.T) {
 	u.Name = "张三"
 	u.BirthDay = time.Now().String()
 
-	t.Logf("old user : %v", u)
+	t.Logf("user : %v", u)
 
 	dp := NewDateParseTag(WithTagName("format_date"))
 
 	dp.Parse(u, u)
 
-	t.Logf("new user  %v", u)
+	t.Logf("user new %v", u)
 }
