@@ -1,7 +1,7 @@
 # dateparse_tag
 dateparse time by struct tag
 
-## 简介
+## intro&简介
 WithTagName() // 自定义你想要使用的tag名称，默认为dateFormat  
 WithDefaultTagValue() // 定义这个tag的默认值，默认为 default  
 WithDefaultFormat() // 定义时间格式化样式，默认为 2006-01-02 15:04:05  
