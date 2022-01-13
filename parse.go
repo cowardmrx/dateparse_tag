@@ -59,7 +59,13 @@ func WithEmptyValue(emptyValue string) Options {
 }
 
 type DateParseTag interface {
+	//Deprecated
 	Parse(in, out interface{})
+	// Format 格式化
+	Format(in interface{})
+
+	// ForRange for range data
+	forRange(field reflect.StructField, val reflect.Value)
 }
 
 func NewDateParseTag(opts ...Options) DateParseTag {
@@ -90,7 +96,7 @@ func (dp *dateParseTag) check() *dateParseTag {
 	return dp
 }
 
-//	@method Parse
+//	@method Parse Deprecated
 //	@description: parse time
 //	@receiver dp
 //	@param in interface{}
@@ -132,6 +138,80 @@ func (dp *dateParseTag) Parse(in, out interface{}) {
 
 	out = in
 	return
+}
+
+//	@method Format
+//	@description: parse time
+//	@receiver dp
+//	@param in interface{}
+func (dp *dateParseTag) Format(in interface{}) {
+	rt := reflect.TypeOf(in).Elem()
+
+	rv := reflect.ValueOf(in).Elem()
+
+	for i := 0; i < rt.NumField(); i++ {
+		field := rt.Field(i)
+
+		val := rv.Field(i)
+
+		dp.forRange(field, val)
+	}
+}
+
+//	@method forRange
+//	@description: for range data
+//	@param field reflect.StructField
+//	@param val reflect.Value
+func (dp *dateParseTag) forRange(field reflect.StructField, val reflect.Value) {
+	switch field.Type.Kind() {
+	case reflect.Ptr:
+		rt := field.Type.Elem()
+		rv := val.Elem()
+		for k := 0; k < rt.NumField(); k++ {
+
+			field := rt.Field(k)
+
+			val := rv.Field(k)
+			dp.forRange(field, val)
+
+		}
+	case reflect.Struct:
+		rt := field.Type
+		rv := val
+		for k := 0; k < rt.NumField(); k++ {
+
+			field := rt.Field(k)
+
+			val := rv.Field(k)
+			dp.forRange(field, val)
+
+		}
+	case reflect.String:
+		tag, ok := field.Tag.Lookup(dp.TagName)
+
+		if !ok {
+			return
+		}
+
+		fieldVal := val
+
+		if fieldVal.String() == "" || len(fieldVal.String()) <= 0 {
+
+			// 校验是否为该空值返回是否为时间类型格式
+			tFormat, err := validateDateFormat(dp.EmptyValue)
+
+			// 如果不是时间类型格式那么直接返回emptyValue的值 反之按照layout格式化返回
+			if err != nil {
+				fieldVal.SetString(dp.EmptyValue)
+			} else {
+				fieldVal.SetString(parseTime(dp.dateFormatLayout(tFormat), dp.EmptyValue))
+			}
+
+		} else {
+
+			fieldVal.SetString(parseTime(dp.dateFormatLayout(tag), fieldVal.String()))
+		}
+	}
 }
 
 //	@method dateFormatLayout
